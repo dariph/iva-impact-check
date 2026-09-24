@@ -92,9 +92,7 @@ cd iva-impact-check
 
 Abra o arquivo index.html em qualquer navegador moderno:
 
-Opção 1: Dê dois cliques no arquivo index.html.
-
-Opção 2 (Recomendada via VS Code): Abra a pasta no VS Code, clique com o botão direito no index.html e selecione "Open with Live Server".
+Dê dois cliques no arquivo index.html.
 
 💼 Aplicação Comercial e Parcerias
 
@@ -121,7 +119,3 @@ Desenvolvido por Dari Pinheiro Heirich
 LinkedIn: linkedin.com/in/dari-pinheiro-heirich-07706040b
 
 GitHub: github.com/dariph/iva-impact-check
-
-📄 Licença
-
-Este projeto está sob a licença MIT — © 2026 Dari Pinheiro Heirich. Todos os direitos reservados.
