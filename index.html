@@ -52,6 +52,8 @@
         Info,
         Sun,
         Moon,
+        RotateCcw,
+        ArrowUp,
       } from "lucide-react";
 
       const SECTOR_PROFILES = {
@@ -101,7 +103,7 @@
           creditoInsumosAntigo: 0,
           reducaoIva: 70,
           descricao:
-            "Locação de bens imóveis contemplada com redução de 70% nas alíquotas de IBS e CBS (PLP 68/2024).",
+            "Locação de bens imóveis contemplada com redução de 70% nas alíquotas de IBS e CBS (LC 214/2025).",
         },
         servicos: {
           label: "Prestador de Serviços (Presumido)",
@@ -188,6 +190,48 @@
 
         const [copySuccess, setCopySuccess] = useState(false);
         const [activeTab, setActiveTab] = useState("simulador");
+        const [showScrollTop, setShowScrollTop] = useState(false);
+
+        useEffect(() => {
+          const handleScroll = () => {
+            if (window.scrollY > 300) {
+              setShowScrollTop(true);
+            } else {
+              setShowScrollTop(false);
+            }
+          };
+          window.addEventListener("scroll", handleScroll);
+          return () => window.removeEventListener("scroll", handleScroll);
+        }, []);
+
+        const scrollToTop = () => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        };
+
+        const handleReset = () => {
+          try {
+            localStorage.removeItem("iva_impact_check_v3");
+          } catch (e) {
+            console.warn(e);
+          }
+          setPerfilSelecionado("simplesB2B");
+          setCenarioTipo("teste2027");
+          setAliquotaIvaPadrao(26.5);
+          setReducaoAliquota(0);
+          setAliquotaTesteCBS(8.8);
+          setAliquotaTesteIBS(0.1);
+          setPrecoAtual(30000);
+          setCustoInsumos(12000);
+          setDespesasOperacionais(4000);
+          setRegimeAtual("simples_hibrido");
+          setAliquotaSimplesDas(8.5);
+          setFatiaIvaDas(45);
+          setAliquotaICMS(0);
+          setAliquotaISS(5.0);
+          setAliquotaPisCofins(3.65);
+          setAproveitamentoCreditoNovo(90);
+          setActiveTab("simulador");
+        };
 
         useEffect(() => {
           try {
@@ -354,16 +398,18 @@
           let totalTributosNovoModelo = 0;
           let creditoTransferidoCliente = 0;
 
+          // Cálculo fixo do crédito transferido pelo Simples Puro (fatia do DAS)
+          const parcelaIvaNoDas =
+            (aliquotaSimplesDas * (fatiaIvaDas / 100)) / 100;
+          const creditoSimplesPuro = precoAtual * parcelaIvaNoDas;
+
           if (regimeAtual === "simples_puro") {
             totalCreditosNovos = 0;
             creditosIvaInsumos = 0;
             creditosIvaDespesas = 0;
             tributoRestanteDas = precoAtual * (aliquotaSimplesDas / 100);
             totalTributosNovoModelo = tributoRestanteDas;
-
-            const parcelaIvaNoDas =
-              (aliquotaSimplesDas * (fatiaIvaDas / 100)) / 100;
-            creditoTransferidoCliente = precoAtual * parcelaIvaNoDas;
+            creditoTransferidoCliente = creditoSimplesPuro;
           } else if (regimeAtual === "simples_hibrido") {
             const aliquotaDasReduzida =
               (aliquotaSimplesDas * (1 - fatiaIvaDas / 100)) / 100;
@@ -451,6 +497,7 @@
             tributoRestanteDas,
             totalTributosNovoModelo,
             saldoCredorIva,
+            creditoSimplesPuro,
             creditoTransferidoCliente,
             lucroNovoMesmoPreco,
             margemPercentualNovaMesmoPreco,
@@ -598,7 +645,21 @@ Gerado via IVA-Impact Check™ • Desenvolvido por Dari Pinheiro Heirich`;
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2.5 self-start md:self-auto">
+                <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    title="Reiniciar simulação e limpar dados salvos"
+                    className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-xs font-bold transition-all duration-200 active:scale-95 cursor-pointer shadow-sm ${
+                      isDark
+                        ? "bg-slate-800 hover:bg-slate-700 text-rose-300 border-slate-700 hover:text-rose-200"
+                        : "bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 border-slate-300/80 hover:border-rose-200"
+                    }`}
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Nova Simulação</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setIsDark(!isDark)}
@@ -1281,8 +1342,8 @@ Gerado via IVA-Impact Check™ • Desenvolvido por Dari Pinheiro Heirich`;
                       <span
                         className={`text-[9.5px] mt-1 block ${isDark ? "text-slate-400" : "text-slate-500"}`}
                       >
-                        Previsto no PLP 68/2024 (LC 214/2025): incide sobre CBS
-                        e IBS do período selecionado.
+                        Previsto na LC 214/2025: incide sobre CBS e IBS do
+                        período selecionado.
                       </span>
                     </div>
                   </div>
@@ -1904,10 +1965,10 @@ Gerado via IVA-Impact Check™ • Desenvolvido por Dari Pinheiro Heirich`;
                       <p
                         className={`text-[11px] leading-relaxed ${isDark ? "text-slate-400" : "text-slate-500"}`}
                       >
-                        Conforme a EC 132/2023 e PLP 68/2024 (LC 214/2025), a
-                        tributação do IBS e CBS ocorre <strong>por fora</strong>{" "}
-                        do preço e segue o princípio do destino com
-                        não-cumulatividade ampla.
+                        Conforme a EC 132/2023, LC 214/2025 e Resolução CGSN nº
+                        190/2026, a tributação do IBS e CBS ocorre{" "}
+                        <strong>por fora</strong> do preço e segue o princípio
+                        do destino com não-cumulatividade ampla.
                       </p>
                     </div>
                   </div>
@@ -2317,8 +2378,7 @@ Gerado via IVA-Impact Check™ • Desenvolvido por Dari Pinheiro Heirich`;
                         Se você mantiver o Simples Puro:
                       </span>
                       <div className="text-lg font-extrabold text-amber-500">
-                        Transfere{" "}
-                        {formatBRL(calculation.creditoTransferidoCliente)} de
+                        Transfere {formatBRL(calculation.creditoSimplesPuro)} de
                         crédito
                       </div>
                       <p
@@ -2460,15 +2520,19 @@ Gerado via IVA-Impact Check™ • Desenvolvido por Dari Pinheiro Heirich`;
                         >
                           (
                           {formatBRL(
-                            calculation.debitoIvaBruto +
-                              calculation.tributoRestanteDas,
+                            regimeAtual === "simples_puro"
+                              ? calculation.totalTributosNovoModelo
+                              : calculation.debitoIvaBruto +
+                                  calculation.tributoRestanteDas,
                           )}
                           )
                         </td>
                         <td className="p-3.5 text-right text-xs">
                           {formatBRL(
-                            calculation.debitoIvaBruto +
-                              calculation.tributoRestanteDas -
+                            (regimeAtual === "simples_puro"
+                              ? calculation.totalTributosNovoModelo
+                              : calculation.debitoIvaBruto +
+                                calculation.tributoRestanteDas) -
                               calculation.impostoVendaAtual,
                           )}
                         </td>
@@ -2488,15 +2552,19 @@ Gerado via IVA-Impact Check™ • Desenvolvido por Dari Pinheiro Heirich`;
                         >
                           {formatBRL(
                             precoAtual -
-                              (calculation.debitoIvaBruto +
-                                calculation.tributoRestanteDas),
+                              (regimeAtual === "simples_puro"
+                                ? calculation.totalTributosNovoModelo
+                                : calculation.debitoIvaBruto +
+                                  calculation.tributoRestanteDas),
                           )}
                         </td>
                         <td className="p-3.5 text-right">
                           {formatBRL(
                             precoAtual -
-                              (calculation.debitoIvaBruto +
-                                calculation.tributoRestanteDas) -
+                              (regimeAtual === "simples_puro"
+                                ? calculation.totalTributosNovoModelo
+                                : calculation.debitoIvaBruto +
+                                  calculation.tributoRestanteDas) -
                               calculation.receitaLiquidaAtual,
                           )}
                         </td>
@@ -2796,7 +2864,8 @@ Gerado via IVA-Impact Check™ • Desenvolvido por Dari Pinheiro Heirich`;
                 <div className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
                   <span className="flex items-center gap-1.5 font-medium">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    Regulamentação: EC 132/2023 & PLP 68/2024
+                    Regulamentação: EC 132/2023, LC 214/2025 & Resolução CGSN nº
+                    190/2026.
                   </span>
                   <span className="hidden sm:inline text-slate-400">•</span>
                   <span>
@@ -2837,6 +2906,17 @@ Gerado via IVA-Impact Check™ • Desenvolvido por Dari Pinheiro Heirich`;
                 </div>
               </div>
             </footer>
+
+            {showScrollTop && (
+              <button
+                type="button"
+                onClick={scrollToTop}
+                title="Voltar ao topo da página"
+                className="fixed bottom-6 right-6 z-50 p-3 rounded-full shadow-2xl bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer border border-blue-400/40 flex items-center justify-center animate-bounce"
+              >
+                <ArrowUp className="w-5 h-5" />
+              </button>
+            )}
           </div>
         );
       }
